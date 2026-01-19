@@ -29,6 +29,14 @@
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #2E1065; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #8B5CF6; }
+        
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.15; transform: scale(1); }
+            50% { opacity: 0.25; transform: scale(1.1); }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 8s ease-in-out infinite;
+        }
     </style>
     <script>
         tailwind.config = {
@@ -59,9 +67,10 @@
     "react-router-dom": "https://esm.sh/react-router-dom@^7.12.0",
     "framer-motion": "https://esm.sh/framer-motion@^11.11.17",
     "lucide-react": "https://esm.sh/lucide-react@^0.454.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.48.1",
     "next/": "https://esm.sh/next@^16.1.3/",
-    "next": "https://esm.sh/next@^16.1.3",
-    "@supabase/ssr": "https://esm.sh/@supabase/ssr@^0.8.0"
+    "@supabase/ssr": "https://esm.sh/@supabase/ssr@^0.8.0",
+    "next": "https://esm.sh/next@^16.1.3"
   }
 }
 </script>

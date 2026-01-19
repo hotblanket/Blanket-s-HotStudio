@@ -2,17 +2,48 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Project, SiteSettings, PartnerInquiry } from '../../types';
-import { getPartnerInquiries } from '../../supabaseService';
+import { getPartnerInquiries, getCurrentUser } from '../../supabaseService';
+import { createClient } from '../../lib/supabase/client';
 
 export const AdminDashboard: React.FC<{ projects: Project[]; settings: SiteSettings }> = ({ projects, settings }) => {
   const [activeTab, setActiveTab] = useState<'projects' | 'partners' | 'settings'>('projects');
   const [partnerInquiries, setPartnerInquiries] = useState<PartnerInquiry[]>([]);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const navigate = useNavigate();
+  const supabase = createClient();
 
   useEffect(() => {
-    if (localStorage.getItem('isAdmin') !== 'true') navigate('/admin/login');
-    if (activeTab === 'partners') getPartnerInquiries().then(setPartnerInquiries);
-  }, [activeTab, navigate]);
+    const checkAdmin = async () => {
+      const user = await getCurrentUser();
+      if (!user) {
+        navigate('/admin/login');
+        return;
+      }
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+        
+      if (profile?.role === 'admin') {
+        setIsAdmin(true);
+      } else {
+        alert('관리자 권한이 없습니다.');
+        navigate('/');
+      }
+    };
+    
+    checkAdmin();
+  }, [navigate, supabase]);
+
+  useEffect(() => {
+    if (isAdmin && activeTab === 'partners') {
+      getPartnerInquiries().then(setPartnerInquiries);
+    }
+  }, [activeTab, isAdmin]);
+
+  if (isAdmin === null) return <div className="h-screen bg-black flex items-center justify-center text-brand font-black animate-pulse">VERIFYING ADMIN...</div>;
 
   return (
     <div className="min-h-screen bg-dark flex flex-col md:flex-row text-white">
@@ -21,7 +52,7 @@ export const AdminDashboard: React.FC<{ projects: Project[]; settings: SiteSetti
         {['projects', 'partners', 'settings'].map(t => (
           <button key={t} onClick={() => setActiveTab(t as any)} className={`w-full text-left px-6 py-4 rounded-2xl font-bold capitalize ${activeTab === t ? 'bg-brand' : 'hover:bg-white/5 text-gray-500'}`}>{t}</button>
         ))}
-        <button onClick={() => { localStorage.removeItem('isAdmin'); navigate('/'); }} className="mt-auto p-4 text-red-500 font-bold">로그아웃</button>
+        <button onClick={async () => { await supabase.auth.signOut(); navigate('/'); }} className="mt-auto p-4 text-red-500 font-bold">로그아웃</button>
       </aside>
 
       <main className="flex-1 p-12">
@@ -46,8 +77,8 @@ export const AdminDashboard: React.FC<{ projects: Project[]; settings: SiteSetti
               }
             </div>
           )}
-          {activeTab === 'projects' && <p className="text-gray-500">프로젝트 관리 로직...</p>}
-          {activeTab === 'settings' && <p className="text-gray-500">사이트 설정 로직...</p>}
+          {activeTab === 'projects' && <p className="text-gray-500">프로젝트 관리 기능을 구현할 수 있습니다.</p>}
+          {activeTab === 'settings' && <p className="text-gray-500">사이트 메타데이터 및 설정을 관리할 수 있습니다.</p>}
         </div>
       </main>
     </div>

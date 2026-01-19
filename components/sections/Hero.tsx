@@ -6,16 +6,6 @@ import { SiteSettings } from '../../types';
 export const Hero: React.FC<{ settings: SiteSettings }> = ({ settings }) => {
   const navigate = useNavigate();
 
-  const handleCommissionClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const userSession = localStorage.getItem('userSession');
-    if (!userSession) {
-      navigate('/login');
-    } else {
-      window.location.hash = 'contact';
-    }
-  };
-
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background Orbs */}
@@ -44,13 +34,12 @@ export const Hero: React.FC<{ settings: SiteSettings }> = ({ settings }) => {
           <a href="#projects" className="w-full sm:w-auto px-10 py-4 bg-brand hover:bg-brand-dark rounded-full font-black text-lg transition-all transform hover:-translate-y-1 shadow-2xl shadow-brand/30">
             포트폴리오 둘러보기
           </a>
-          <a 
-            href="#contact" 
-            onClick={handleCommissionClick}
+          <button 
+            onClick={() => navigate('/commission')}
             className="w-full sm:w-auto px-10 py-4 glass hover:bg-white/10 rounded-full font-black text-lg transition-all transform hover:-translate-y-1"
           >
-            커미션 의뢰
-          </a>
+            커미션 의뢰하기
+          </button>
         </div>
       </div>
 
