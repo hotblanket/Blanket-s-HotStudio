@@ -1,0 +1,8 @@
+{
+  "name": "Blanket's Hotstudio",
+  "description": "Premium Roblox Developer Portfolio and Commission Website",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
