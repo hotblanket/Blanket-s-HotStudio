@@ -4,14 +4,7 @@ import { Project, SiteSettings, Review, PartnerInquiry } from './types';
 
 const supabase = createClient();
 
-// --- Auth Services ---
-// Fix for AdminDashboard.tsx: added getCurrentUser
-export const getCurrentUser = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
-};
-
-// --- Inquiry Services (로그인 없이 가능) ---
+// --- Inquiry Services ---
 export const submitInquiry = async (inquiryData: any): Promise<boolean> => {
   try {
     const { error } = await supabase.from('inquiries').insert([
@@ -22,13 +15,10 @@ export const submitInquiry = async (inquiryData: any): Promise<boolean> => {
         message: inquiryData.message,
         budget_range: inquiryData.budget_range,
         deadline: inquiryData.deadline,
-        reference_link: inquiryData.reference_link,
         status: 'new'
       }
     ]);
-
-    if (error) throw error;
-    return true;
+    return !error;
   } catch (e) {
     console.error('Inquiry submission failed:', e);
     return false;
@@ -47,25 +37,18 @@ export const submitPartnerInquiry = async (data: Partial<PartnerInquiry>): Promi
         status: 'new'
       }
     ]);
-
-    if (error) throw error;
-    return true;
+    return !error;
   } catch (e) {
     console.error('Partner inquiry failed:', e);
     return false;
   }
 };
 
-// Fix for AdminDashboard.tsx: added getPartnerInquiries
 export const getPartnerInquiries = async (): Promise<PartnerInquiry[]> => {
   try {
-    const { data, error } = await supabase
-      .from('partner_inquiries')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { data } = await supabase.from('partner_inquiries').select('*').order('created_at', { ascending: false });
     return data || [];
   } catch (e) {
-    console.error('Failed to fetch partner inquiries:', e);
     return [];
   }
 };
@@ -73,10 +56,7 @@ export const getPartnerInquiries = async (): Promise<PartnerInquiry[]> => {
 // --- Review Services ---
 export const getReviews = async (): Promise<Review[]> => {
   try {
-    const { data, error } = await supabase
-      .from('reviews')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { data } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
     return data || [];
   } catch (e) {
     return [];
@@ -93,9 +73,7 @@ export const submitReview = async (reviewData: any) => {
       is_anonymous: reviewData.is_anonymous,
       service_tags: reviewData.service_tags,
       status: 'published',
-      is_featured: false,
-      verified: reviewData.verify_code === 'HOTSTUDIO2024',
-      helpful_count: 0
+      verified: reviewData.verify_code === 'HOTSTUDIO2024'
     }]);
     return !error;
   } catch (e) {
@@ -103,53 +81,23 @@ export const submitReview = async (reviewData: any) => {
   }
 };
 
-// Fix for ReviewManager.tsx: added updateReviewStatus
 export const updateReviewStatus = async (id: string, status: Review['status']) => {
-  try {
-    const { error } = await supabase
-      .from('reviews')
-      .update({ status })
-      .eq('id', id);
-    return !error;
-  } catch (e) {
-    console.error('Update review status failed:', e);
-    return false;
-  }
+  const { error } = await supabase.from('reviews').update({ status }).eq('id', id);
+  return !error;
 };
 
-// Fix for ReviewManager.tsx: added toggleReviewFeatured
 export const toggleReviewFeatured = async (id: string) => {
-  try {
-    const { data: review, error: fetchError } = await supabase
-      .from('reviews')
-      .select('is_featured')
-      .eq('id', id)
-      .single();
-    
-    if (fetchError || !review) throw new Error('리뷰를 찾을 수 없습니다.');
-
-    const { error: updateError } = await supabase
-      .from('reviews')
-      .update({ is_featured: !review.is_featured })
-      .eq('id', id);
-    
-    if (updateError) throw updateError;
-    return true;
-  } catch (e) {
-    console.error('Toggle review featured failed:', e);
-    throw e;
-  }
+  const { data: review } = await supabase.from('reviews').select('is_featured').eq('id', id).single();
+  if (!review) return false;
+  const { error } = await supabase.from('reviews').update({ is_featured: !review.is_featured }).eq('id', id);
+  return !error;
 };
 
-// --- Site Data ---
+// --- Site Data (With Robust Fallbacks) ---
 export const getProjects = async (): Promise<Project[]> => {
   try {
-    const { data, error } = await supabase
-      .from('projects')
-      .select('*')
-      .order('order_index', { ascending: true });
-      
-    if (error || !data || data.length === 0) throw new Error('No projects');
+    const { data, error } = await supabase.from('projects').select('*').order('order_index', { ascending: true });
+    if (error || !data || data.length === 0) throw new Error();
     return data;
   } catch (e) {
     return [
@@ -164,8 +112,22 @@ export const getProjects = async (): Promise<Project[]> => {
         role: 'Full System',
         period: '2일',
         links: { roblox: '#' },
-        status: 'completed' as const,
+        status: 'completed',
         order_index: 0
+      },
+      {
+        id: '2',
+        created_at: new Date().toISOString(),
+        title: 'UI/UX 상점 시스템',
+        tagline: '모던한 디자인의 게임 내 상점',
+        description: '트윈 애니메이션 기반의 매끄러운 UI.',
+        thumbnail_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800',
+        tech_tags: ['UI', 'TweenService'],
+        role: 'Design & Script',
+        period: '4일',
+        links: { roblox: '#' },
+        status: 'completed',
+        order_index: 1
       }
     ];
   }
@@ -174,7 +136,7 @@ export const getProjects = async (): Promise<Project[]> => {
 export const getSiteSettings = async (): Promise<SiteSettings> => {
   try {
     const { data, error } = await supabase.from('site_settings').select('*').single();
-    if (error || !data) throw new Error('No settings');
+    if (error || !data) throw new Error();
     return data;
   } catch (e) {
     return {
@@ -186,4 +148,9 @@ export const getSiteSettings = async (): Promise<SiteSettings> => {
       updated_at: new Date().toISOString()
     };
   }
+};
+
+export const getCurrentUser = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
 };

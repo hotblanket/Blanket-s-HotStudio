@@ -8,6 +8,7 @@ import { Services } from './components/sections/Services';
 import { Process } from './components/sections/Process';
 import { About } from './components/sections/About';
 import { ReviewsSection } from './components/sections/ReviewsSection';
+import { Contact } from './components/sections/Contact';
 import { Footer } from './components/Footer';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminLogin } from './components/admin/AdminLogin';
@@ -26,6 +27,7 @@ const Home: React.FC<{ projects: Project[]; settings: SiteSettings }> = ({ proje
       <div id="process"><Process /></div>
       <div id="about"><About /></div>
       <div id="reviews"><ReviewsSection /></div>
+      <div id="contact"><Contact /></div>
     </main>
     <Footer siteName={settings.site_name} />
   </div>
@@ -51,7 +53,14 @@ const App: React.FC = () => {
     init();
   }, []);
 
-  if (loading || !settings) return <div className="h-screen bg-black flex items-center justify-center text-brand font-black animate-pulse">HOTSTUDIO LOADING...</div>;
+  if (loading || !settings) {
+    return (
+      <div className="h-screen bg-black flex flex-col items-center justify-center">
+        <div className="w-12 h-12 border-4 border-brand border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div className="text-brand font-black tracking-widest animate-pulse">HOTSTUDIO LOADING...</div>
+      </div>
+    );
+  }
 
   return (
     <Router>
@@ -61,6 +70,7 @@ const App: React.FC = () => {
         <Route path="/partner-inquiry" element={<PartnerInquiryPage />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminDashboard projects={projects} settings={settings} />} />
+        {/* Catch all redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
